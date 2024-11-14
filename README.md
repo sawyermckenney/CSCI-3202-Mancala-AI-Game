@@ -4,4 +4,4 @@
 
 ## Project Description:
 
-> *  Implement Mancala using AI
+*  Implement Mancala using AI
