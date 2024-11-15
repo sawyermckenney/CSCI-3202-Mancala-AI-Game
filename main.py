@@ -1,10 +1,7 @@
 import random
 random.seed(109)
 
-#This is the project:
-#Ethans valid move function
-#Sawyers play function needs adjustment
-#
+
 class Mancala:
     def __init__(self, pits_per_player=6, stones_per_pit = 4):
         """
@@ -101,6 +98,13 @@ class Mancala:
             
         return generated_pit
     
+    def pitIndex(self, pit):
+        if self.current_player == 1:
+            return self.p1_pits_index[0] + (pit - 1)
+        else:
+            return self.p2_pits_index[0] + (pit - 1)
+    
+    
     def play(self, pit):
         """
         This function simulates a single move made by a specific player using their selected pit. It primarily performs three tasks:
@@ -111,42 +115,35 @@ class Mancala:
         Finally, the function then switches the current player, allowing the other player to take their turn.
         """
         print(f'P{self.current_player} chose pit {pit}\n')
-        
-        
-        # write your code here
+        player = self.current_player
+        index = self.pitIndex(pit)
+        stones = self.board[index]
+
         if self.valid_move(pit) == False:
             print("INVALID MOVE")
             return
-        pit -= 1
-        if self.current_player == 1:
-            index = self.p1_pits_index[0] + pit
-        else:
-            index = self.p2_pits_index[0] + pit
-        self.moves.append((self.current_player, pit+1))
-        stones = self.board[index]
+        self.moves.append((player, pit))
         self.board[index] = 0
         while stones > 0:
             index = (index +1) % len(self.board)
-            if (self.current_player == 1 and index == self.p2_mancala_index) or (self.current_player == 2 and index == self.p1_mancala_index):
+            if (player == 1 and index == self.p2_mancala_index) or (player == 2 and index == self.p1_mancala_index):
                 continue
             self.board[index] += 1
             stones -= 1
-        if self.current_player == 1 and self.p1_pits_index[0] <= index <= self.p1_pits_index[1]:
+        #Capture conditions
+        if player == 1 and self.p1_pits_index[0] <= index <= self.p1_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p2_pits_index[0]+(self.p1_pits_index[1]-index)
-                self.board[self.p1_mancala_index] += self.board[opposite] + self.board[index]
+                self.board[self.p1_mancala_index] += self.board[opposite] + stones
                 self.board[opposite] = 0
                 self.board[index] = 0
-        elif self.current_player == 2 and self.p2_pits_index[0] <= index <= self.p2_pits_index[1]:
+        elif player == 2 and self.p2_pits_index[0] <= index <= self.p2_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p1_pits_index[0]+(self.p2_pits_index[1]-index)
-                self.board[self.p2_mancala_index] += self.board[opposite] + self.board[index]
+                self.board[self.p2_mancala_index] += self.board[opposite] + stones
                 self.board[opposite - index] = 0
                 self.board[index] = 0
-        if self.current_player == 1:
-            self.current_player = 2
-        else:
-            self.current_player = 1
+        self.current_player = 2 if player == 1 else 1
         if self.winning_eval() == False:
             return
     
@@ -182,12 +179,10 @@ class Mancala:
             return True
 
 def main():
-    game = Mancala(pits_per_player=9, stones_per_pit = 4)
+    game = Mancala(pits_per_player=2, stones_per_pit = 5)
     game.display_board()
     game.play(1)
     game.display_board()
-    game.play(1)
-    game.play(1)
 if __name__ == "__main__":
     main()
 
