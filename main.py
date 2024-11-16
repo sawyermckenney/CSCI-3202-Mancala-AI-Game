@@ -1,5 +1,5 @@
 import random
-random.seed(109)
+# random.seed(109) - use to get reproducible results 
 
 
 class Mancala:
@@ -90,7 +90,9 @@ class Mancala:
         """
         Function to generate random valid moves with non-empty pits for the random player
         """
-        
+        # set seed to be different at top of method
+        # random.randint produces the same sequence of numbers for the same seed
+        # could also look into numpy.random
         # write your code here
         generated_pit = random.randint(1, self.pits_per_player)
         while not self.valid_move(generated_pit):
@@ -102,10 +104,10 @@ class Mancala:
         if self.current_player == 1:
             return self.p1_pits_index[0] + (pit - 1)
         else:
-            return self.p2_pits_index[0] + (pit - 1)
+            return self.p2_pits_index[0] + pit
     
     
-    def play(self, pit):
+    def play_turn(self, pit):
         """
         This function simulates a single move made by a specific player using their selected pit. It primarily performs three tasks:
         1. It checks if the chosen pit is a valid move for the current player. If not, it prints "INVALID MOVE" and takes no action.
@@ -118,6 +120,20 @@ class Mancala:
         player = self.current_player
         index = self.pitIndex(pit)
         stones = self.board[index]
+        # maybe some additional variables to set (up to you as to whether you find useful):
+            # self.p1/p2_pits_index[0] -> pit_start or something similar
+            # self.p1/p2_pits_index[1] -> pit_end or something similar
+            # self.p1/p2_mancala_index -> my_mancala and opponent_mancala
+
+        # could also be cool to refactor capture conditions section
+            # notice how the code is virtually the same whether it is player1 or player 2
+                # primary difference is for:
+                    # player1: self.board[opposite] = 0
+                    # player2: self.board[opposite - index] = 0
+            # could create a method like evaluate_capture(self, player, start_pit, end_pit, index)
+            # pulls some of the logic of dealing with captures out of the act of playing a turn
+
+
 
         if self.valid_move(pit) == False:
             print("INVALID MOVE")
@@ -134,55 +150,66 @@ class Mancala:
         if player == 1 and self.p1_pits_index[0] <= index <= self.p1_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p2_pits_index[0]+(self.p1_pits_index[1]-index)
-                self.board[self.p1_mancala_index] += self.board[opposite] + stones
+                self.board[self.p1_mancala_index] += self.board[opposite] + self.board[index]
                 self.board[opposite] = 0
                 self.board[index] = 0
         elif player == 2 and self.p2_pits_index[0] <= index <= self.p2_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p1_pits_index[0]+(self.p2_pits_index[1]-index)
-                self.board[self.p2_mancala_index] += self.board[opposite] + stones
+                self.board[self.p2_mancala_index] += self.board[opposite] + self.board[index]
                 self.board[opposite - index] = 0
                 self.board[index] = 0
         self.current_player = 2 if player == 1 else 1
-        if self.winning_eval() == False:
-            return
     
+    def play_random_verse_random(self):
+
+        # note: random seed is set at top of file
+        self.display_board()
+        while not self.winning_eval():
+            move = self.random_move_generator()
+            self.play_turn(move)
+            self.display_board()
+
     def winning_eval(self):
         """
         Function to verify if the game board has reached the winning state.
         Hint: If either of the players' pits are all empty, then it is considered a winning state.
         """
         # write your code here
-        if self.winning_eval_helper(1) or self.winning_eval_helper(2):
+        p1_start_pit, p1_end_pit = self.p1_pits_index
+        p2_start_pit, p2_end_pit = self.p2_pits_index
+
+        if self.winning_eval_helper(p1_start_pit, p1_end_pit) or self.winning_eval_helper(p2_start_pit, p2_end_pit):
+            print("GAME OVER")
+            self.evaluate_end_state()
             return True
         
         return False
-        
-        
+           
+    def winning_eval_helper(self, start_pit, end_pit):
+        for pit in range(start_pit, end_pit + 1):
+            if self.board[pit] == 0:
+                continue
+            else:
+                return False
+        return True
     
-    def winning_eval_helper(self, player):
-        if player == 1:
-            for pit in range(self.p1_pits_index[0], self.p1_pits_index[1]):
-                if self.board[pit] == 0:
-                    continue
-                else:
-                    return False
+    def evaluate_end_state(self):
+        p1_mancala = self.p1_mancala_index
+        p2_mancala = self.p2_mancala_index
 
-            return True
+        if self.board[p1_mancala] > self.board[p2_mancala]:
+            print("Player 1 wins!")
+        elif self.board[p1_mancala] < self.board[p2_mancala]:
+            print("Player 2 wins!")
         else:
-            for pit in range(self.p2_pits_index[0], self.p2_pits_index[1]):
-                if self.board[pit] == 0:
-                    continue
-                else:
-                    return False
-            
-            return True
+            print("It's a TIE!")
 
 def main():
     game = Mancala(pits_per_player=2, stones_per_pit = 5)
-    game.display_board()
-    game.play(1)
-    game.display_board()
+    # game.display_board()
+    game.play_random_verse_random()
+    # game.display_board()
 if __name__ == "__main__":
     main()
 
