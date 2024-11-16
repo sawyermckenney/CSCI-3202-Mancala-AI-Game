@@ -1,4 +1,7 @@
+import sys
+sys.path.append('aima-python')
 import random
+
 # random.seed(109) - use to get reproducible results 
 
 
@@ -205,8 +208,35 @@ class Mancala:
         else:
             print("It's a TIE!")
 
+
+class AIPlayer(Mancala):
+    def __init__(self, pits_per_player=6, stones_per_pit=4):
+        super().__init__(pits_per_player, stones_per_pit)
+
+
+    def actions(self): #This will be the actions possible from states
+        validMoves = []
+       
+        for i in range(1, self.pits_per_player +1):
+            if self.valid_move(i):
+                validMoves.append(i)
+        return validMoves
+    
+    def utility(self): # # stones in Max Mancala - # stone in Min Mancala
+        player = self.current_player
+        if player == 1:
+            maxMancala = self.p1_mancala_index
+            minMancala = self.p2_mancala_index
+        else:
+            maxMancala = self.p2_mancala_index
+            minMancala = self.p1_mancala_index
+        return self.board[maxMancala] - self.board[minMancala]
+        
+
+
+
 def main():
-    game = Mancala(pits_per_player=2, stones_per_pit = 5)
+    game = Mancala(pits_per_player=4, stones_per_pit = 1)
     # game.display_board()
     game.play_random_verse_random()
     # game.display_board()
