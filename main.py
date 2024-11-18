@@ -1,8 +1,7 @@
-import sys
-sys.path.append('aima-python')
 import random
+import numpy as np
 
-# random.seed(109) - use to get reproducible results 
+#random.seed(109) # use to get reproducible results 
 
 
 class Mancala:
@@ -119,7 +118,7 @@ class Mancala:
 
         Finally, the function then switches the current player, allowing the other player to take their turn.
         """
-        print(f'P{self.current_player} chose pit {pit}\n')
+        #print(f'P{self.current_player} chose pit {pit}\n')
         player = self.current_player
         index = self.pitIndex(pit)
         stones = self.board[index]
@@ -208,38 +207,125 @@ class Mancala:
         else:
             print("It's a TIE!")
 
+def minmax_decision(state, game, depthLimit): #Note: Added a depth limit to limit run time
+    """Given a state in a game, calculate the best move by searching
+    forward all the way to the terminal states. [Figure 5.3]"""
+
+    player = game.to_move(state)
+
+    def max_value(state, depth):
+        if game.terminal_test(state) or depth == 0:
+            return game.utility(state, player)
+        v = -np.inf
+        for a in game.actions(state):
+            v = max(v, min_value(game.result(state, a), depth - 1))
+        return v
+
+    def min_value(state, depth):
+        if game.terminal_test(state) or depth == 0:
+            return game.utility(state, player)
+        v = np.inf
+        for a in game.actions(state):
+            v = min(v, max_value(game.result(state, a), depth - 1))
+        return v
+
+    # Body of minmax_decision:
+    return max(game.actions(state), key=lambda a: min_value(game.result(state, a), depthLimit))
 
 class AIPlayer(Mancala):
     def __init__(self, pits_per_player=6, stones_per_pit=4):
         super().__init__(pits_per_player, stones_per_pit)
 
-
-    def actions(self): #This will be the actions possible from states
-        validMoves = []
-       
-        for i in range(1, self.pits_per_player +1):
-            if self.valid_move(i):
-                validMoves.append(i)
-        return validMoves
+    def actions(self, state):
+        """Return a list of the allowable moves at this point."""
+        valid_moves = []
+        current_player = state['currentPlayer']
+        board = state['board']
+        start = 0
+        end = 0
+        
+        if current_player == 1:
+            start = self.p1_pits_index[0] 
+            end = self.p1_pits_index[1] + 1
+            for pit in range(start, end):
+                if board[pit] > 0:
+                    valid_moves.append(pit - self.p1_pits_index[0]+1) # board is actually 0 indexed, so pit 1 corresponds to self.board[0]
+        elif current_player == 2:
+            start = self.p2_pits_index[0] 
+            end = self.p2_pits_index[1] + 1 
+            for pit in range(start, end):
+                if board[pit] > 0:
+                    valid_moves.append(pit - self.p2_pits_index[0]+1) # board is actually 0 indexed, so pit 1 corresponds to self.board[0]
+        return valid_moves
     
-    def utility(self): # # stones in Max Mancala - # stone in Min Mancala
-        player = self.current_player
+    def utility(self, state, player): #This is the utility function that will be calculated for each individual board
+        board = state['board']
+        
         if player == 1:
             maxMancala = self.p1_mancala_index
             minMancala = self.p2_mancala_index
-        else:
+        else: 
             maxMancala = self.p2_mancala_index
             minMancala = self.p1_mancala_index
-        return self.board[maxMancala] - self.board[minMancala]
+
+        return board[maxMancala] - board[minMancala] #Utility function 
+    
+    def getState(self): #helper function
+        return {'board': self.board[:], 'currentPlayer': self.current_player}
+    
+    def result(self, state, move): #What this does is it takes a state and from there it makes a move and returns the result of the move
+        """Return the state that results from making a move from a state.""" 
+        game = Mancala(self.pits_per_player, 0) #Don't need to initialize this because board is copied over
+        game.board = state['board'][:] 
+        game.current_player = state['currentPlayer']
+        game.play_turn(move)
+        return {'board': game.board, 'currentPlayer': game.current_player}
+    
+    def terminal_test_helper(self, state, start_pit, end_pit):
+        board = state['board']
+        for pit in range(start_pit, end_pit + 1):
+            if board[pit] == 0:
+                continue
+            else:
+                return False
+        return True
+
+    def terminal_test(self, state):
+        """Return True if this is a final state for the game."""
+        p1_start_pit, p1_end_pit = self.p1_pits_index
+        p2_start_pit, p2_end_pit = self.p2_pits_index
+        return self.terminal_test_helper(state, p1_start_pit, p1_end_pit) or self.terminal_test_helper(state, p2_start_pit, p2_end_pit)
+
+    def to_move(self, state):
+        return state['currentPlayer']
         
 
-
-
 def main():
-    game = Mancala(pits_per_player=4, stones_per_pit = 1)
-    # game.display_board()
-    game.play_random_verse_random()
-    # game.display_board()
+    player1 = 0
+    player2 = 0
+
+    for i in range(100):
+        #game = Mancala(pits_per_player=4, stones_per_pit = 2)
+        game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
+        #game.play_random_verse_random()
+        # game.display_board()
+        while not game.winning_eval():
+            if game.current_player == 2:
+                pit = game.random_move_generator()
+                game.play_turn(pit)
+            else:
+                state = game.getState()
+                action = minmax_decision(state, game, 7) 
+                game.play_turn(action)
+        if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
+            player1 += 1
+        elif game.board[game.p2_mancala_index] > game.board[game.p1_mancala_index]:
+            player2 += 1
+    print(f"Player 1 Wins: {player1}")
+    print(f"Player 2 Wins: {player2}")
+
+
+
 if __name__ == "__main__":
     main()
 
