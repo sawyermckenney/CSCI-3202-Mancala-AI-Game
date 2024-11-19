@@ -153,14 +153,12 @@ class Mancala:
         if player == 1 and self.p1_pits_index[0] <= index <= self.p1_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p2_pits_index[0]+(self.p1_pits_index[1]-index)
-                print(f"Player {player} pit: {index}, Opposite pit: {opposite}")
                 self.board[self.p1_mancala_index] += self.board[opposite] + self.board[index]
                 self.board[opposite] = 0
                 self.board[index] = 0
         elif player == 2 and self.p2_pits_index[0] <= index <= self.p2_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p1_pits_index[0]+(self.p2_pits_index[1]-index)
-                print(f"Player {player} pit: {index}, Opposite pit: {opposite}")
                 self.board[self.p2_mancala_index] += self.board[opposite] + self.board[index]
                 self.board[opposite] = 0
                 self.board[index] = 0
@@ -314,18 +312,27 @@ def main():
     turns_taken = []
 
     for i in range(100):
-        game = Mancala(pits_per_player=4, stones_per_pit = 6)
-        # game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
-        #game.play_random_verse_random()
+        # game = Mancala(pits_per_player=4, stones_per_pit = 6)
+        game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
         # game.display_board()
         while not game.winning_eval():
-            num_turns = game.play_random_verse_random()
-            turns_taken.append(num_turns)
+            # random versus random logic
+            # num_turns = game.play_random_verse_random()
+            # turns_taken.append(num_turns)
+
+            # random vs ai logic
+            if game.current_player == 1:
+                pit = game.random_move_generator()
+                game.play_turn(pit)
+            else:
+                state = game.getState()
+                action = minmax_decision(state, game, 7) 
+                game.play_turn(action)
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
             player1 += 1
         elif game.board[game.p2_mancala_index] > game.board[game.p1_mancala_index]:
             player2 += 1
-    print(f"Average number of turns taken: {math.ceil(np.mean(turns_taken))}")
+    #print(f"Average number of turns taken: {math.ceil(np.mean(turns_taken))}") # print statement for random versus random
     print(f"Player 1 Wins: {player1}")
     print(f"Player 2 Wins: {player2}")
 
