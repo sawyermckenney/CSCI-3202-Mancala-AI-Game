@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import math
 
 #random.seed(109) # use to get reproducible results 
 
@@ -95,8 +96,8 @@ class Mancala:
         # set seed to be different at top of method
         # random.randint produces the same sequence of numbers for the same seed
         # could also look into numpy.random
-        # write your code here
         generated_pit = random.randint(1, self.pits_per_player)
+        
         while not self.valid_move(generated_pit):
             generated_pit = random.randint(1, self.pits_per_player)
             
@@ -106,7 +107,7 @@ class Mancala:
         if self.current_player == 1:
             return self.p1_pits_index[0] + (pit - 1)
         else:
-            return self.p2_pits_index[0] + pit
+            return self.p2_pits_index[0] + (pit - 1)
     
     
     def play_turn(self, pit):
@@ -152,25 +153,32 @@ class Mancala:
         if player == 1 and self.p1_pits_index[0] <= index <= self.p1_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p2_pits_index[0]+(self.p1_pits_index[1]-index)
+                print(f"Player {player} pit: {index}, Opposite pit: {opposite}")
                 self.board[self.p1_mancala_index] += self.board[opposite] + self.board[index]
                 self.board[opposite] = 0
                 self.board[index] = 0
         elif player == 2 and self.p2_pits_index[0] <= index <= self.p2_pits_index[1]:
             if self.board[index] == 1:
                 opposite = self.p1_pits_index[0]+(self.p2_pits_index[1]-index)
+                print(f"Player {player} pit: {index}, Opposite pit: {opposite}")
                 self.board[self.p2_mancala_index] += self.board[opposite] + self.board[index]
-                self.board[opposite - index] = 0
+                self.board[opposite] = 0
                 self.board[index] = 0
         self.current_player = 2 if player == 1 else 1
     
     def play_random_verse_random(self):
 
         # note: random seed is set at top of file
+        turn_counter = 0
         self.display_board()
         while not self.winning_eval():
             move = self.random_move_generator()
+            print(f"Selected pit {move}") 
             self.play_turn(move)
             self.display_board()
+            turn_counter += 1
+
+        return turn_counter
 
     def winning_eval(self):
         """
@@ -303,24 +311,21 @@ class AIPlayer(Mancala):
 def main():
     player1 = 0
     player2 = 0
+    turns_taken = []
 
     for i in range(100):
-        #game = Mancala(pits_per_player=4, stones_per_pit = 2)
-        game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
+        game = Mancala(pits_per_player=4, stones_per_pit = 6)
+        # game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
         #game.play_random_verse_random()
         # game.display_board()
         while not game.winning_eval():
-            if game.current_player == 2:
-                pit = game.random_move_generator()
-                game.play_turn(pit)
-            else:
-                state = game.getState()
-                action = minmax_decision(state, game, 7) 
-                game.play_turn(action)
+            num_turns = game.play_random_verse_random()
+            turns_taken.append(num_turns)
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
             player1 += 1
         elif game.board[game.p2_mancala_index] > game.board[game.p1_mancala_index]:
             player2 += 1
+    print(f"Average number of turns taken: {math.ceil(np.mean(turns_taken))}")
     print(f"Player 1 Wins: {player1}")
     print(f"Player 2 Wins: {player2}")
 
