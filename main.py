@@ -309,7 +309,7 @@ class AIPlayer(Mancala):
 def main():
     player1 = 0
     player2 = 0
-    turns_taken = []
+    # turns_taken = []
 
     for i in range(100):
         # game = Mancala(pits_per_player=4, stones_per_pit = 6)
