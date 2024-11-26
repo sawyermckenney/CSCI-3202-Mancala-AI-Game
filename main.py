@@ -2,7 +2,7 @@ import random
 import numpy as np
 import math
 
-#random.seed(109) # use to get reproducible results 
+random.seed(109) # use to get reproducible results 
 
 
 class Mancala:
@@ -238,6 +238,47 @@ def minmax_decision(state, game, depthLimit): #Note: Added a depth limit to limi
     # Body of minmax_decision:
     return max(game.actions(state), key=lambda a: min_value(game.result(state, a), depthLimit))
 
+def alpha_beta_search(state, game, depthLimit):
+    """Search game to determine best action; use alpha-beta pruning.
+    As in [Figure 5.7], this version searches all the way to the leaves."""
+    
+    player = game.to_move(state)
+
+    # Functions used by alpha_beta
+    def max_value(state, alpha, beta, depth):
+        if game.terminal_test(state) or depth == 0:
+            return game.utility(state, player)
+        v = -np.inf
+        for a in game.actions(state):
+            v = max(v, min_value(game.result(state, a), alpha, beta, depth - 1))
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+        return v
+
+    def min_value(state, alpha, beta, depth):
+        if game.terminal_test(state) or depth == 0:
+            return game.utility(state, player)
+        v = np.inf
+        for a in game.actions(state):
+            v = min(v, max_value(game.result(state, a), alpha, beta, depth - 1))
+            if v <= alpha:
+                return v
+            beta = min(beta, v)
+        return v
+
+    # Body of alpha_beta_search:
+    best_score = -np.inf
+    beta = np.inf
+    best_action = None
+    for a in game.actions(state):
+        v = min_value(game.result(state, a), best_score, beta, depthLimit - 1)
+        if v > best_score:
+            best_score = v
+            best_action = a
+    return best_action
+
+
 class AIPlayer(Mancala):
     def __init__(self, pits_per_player=6, stones_per_pit=4):
         super().__init__(pits_per_player, stones_per_pit)
@@ -320,13 +361,19 @@ def main():
             # num_turns = game.play_random_verse_random()
             # turns_taken.append(num_turns)
 
-            # random vs ai logic
+            # random vs ai logic 
             if game.current_player == 1:
                 pit = game.random_move_generator()
                 game.play_turn(pit)
             else:
+                # minimax
+                # state = game.getState()
+                # action = minmax_decision(state, game, 7) 
+                # game.play_turn(action)
+
+                # alpha beta
                 state = game.getState()
-                action = minmax_decision(state, game, 7) 
+                action = alpha_beta_search(state, game, 10)
                 game.play_turn(action)
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
             player1 += 1
