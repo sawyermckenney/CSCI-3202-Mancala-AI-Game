@@ -2,6 +2,9 @@ import random
 import numpy as np
 import math
 
+from tkinter import *
+import tkinter as tk
+
 random.seed(109) # use to get reproducible results 
 
 
@@ -352,7 +355,7 @@ def main():
     player2 = 0
     # turns_taken = []
 
-    for i in range(100):
+    for i in range(1):
         # game = Mancala(pits_per_player=4, stones_per_pit = 6)
         game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
         # game.display_board()
@@ -383,8 +386,55 @@ def main():
     print(f"Player 1 Wins: {player1}")
     print(f"Player 2 Wins: {player2}")
 
+class MancalaUI:
+    def __init__(self, mancala):
+        self.game = Mancala()
+        self.root = tk.Tk()
+        self.root.title("Mancala")
+        self.menu()
+    
+    def menu(self):
+        button0 = Button(self.root, text="AI vs Random", command=self.random_vs_ai)
+        button1 = Button(self.root, text="Player vs AI", command=self.player_vs_ai)
+        button2 = Button(self.root, text="Player vs Random", command=self.player_vs_random)
+        button0.pack()
+        button1.pack()
+        button2.pack()
 
+    def setup_board(self):
+        for widget in self.root.winfo_children(): #Clears the initial buttons
+            widget.destroy()
+        
+        self.player = tk.Label(self.root, text=f"Player {self.game.current_player}'s Turn").pack(pady=10)
+        board_frame = tk.Frame(self.root) #Creates a container for grouping the peaces
+        board_frame.pack(pady=20) #Y-axis positioning
+        tk.Label(board_frame, text=f"P2-{self.game.board[self.game.p2_mancala_index]}", width=5, height=6, bg="white", fg="black").grid(row=0, column=0, rowspan=2, padx=10, pady=10)
+        for i in range(1, self.game.pits_per_player+1):
+            index = self.game.pitIndex(i)
+            stones = self.game.board[index]
+            tk.Button(board_frame, text=f"P2-{stones}", width=5, height=2).grid(row=0, column=i)
+        for i in range(1, self.game.pits_per_player+1):
+            index = self.game.pitIndex(i)
+            stones = self.game.board[index]
+            tk.Button(board_frame, text=f"P1-{stones}", width=5, height=2).grid(row=1, column=i)
+        tk.Label(board_frame, text=f"P1-{self.game.board[self.game.p1_mancala_index]}", width=5, height=6, bg="white", fg="black").grid(row=0, column=self.game.pits_per_player+1, rowspan=2, padx=10, pady=10)
+        quit = tk.Button(self.root, text="Quit", command=self.root.quit).pack(pady=1)
+    def player_vs_random(self):
+        self.setup_board()
+ 
+    def random_vs_ai(self):
+        self.setup_board()
+
+    def player_vs_ai(self):
+        self.setup_board()
+
+    def run(self):
+        self.root.mainloop()
+
+        
 
 if __name__ == "__main__":
     main()
-
+    game = Mancala()
+    app = MancalaUI(game)
+    app.run()
