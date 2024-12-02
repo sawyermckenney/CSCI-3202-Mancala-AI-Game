@@ -5,7 +5,7 @@ import math
 from tkinter import *
 import tkinter as tk
 
-random.seed(109) # use to get reproducible results 
+# random.seed(109) # use to get reproducible results 
 
 
 class Mancala:
@@ -35,6 +35,9 @@ class Mancala:
         # Zeroing the Mancala for both players
         self.board[self.p1_mancala_index] = 0
         self.board[self.p2_mancala_index] = 0
+
+        # turn counter
+        self.turn_number = 0
 
     def display_board(self):
         """
@@ -166,6 +169,7 @@ class Mancala:
                 self.board[opposite] = 0
                 self.board[index] = 0
         self.current_player = 2 if player == 1 else 1
+        self.turn_number += 1
     
     def play_random_verse_random(self):
 
@@ -353,16 +357,15 @@ class AIPlayer(Mancala):
 def main():
     player1 = 0
     player2 = 0
-    # turns_taken = []
+    turns_taken = []
 
-    for i in range(1):
-        # game = Mancala(pits_per_player=4, stones_per_pit = 6)
-        game = AIPlayer(pits_per_player=4, stones_per_pit = 6)
+    for i in range(10000):
+        # game = Mancala(pits_per_player=6, stones_per_pit = 4)
+        game = AIPlayer(pits_per_player=6, stones_per_pit = 4)
         # game.display_board()
         while not game.winning_eval():
             # random versus random logic
             # num_turns = game.play_random_verse_random()
-            # turns_taken.append(num_turns)
 
             # random vs ai logic 
             if game.current_player == 1:
@@ -370,19 +373,20 @@ def main():
                 game.play_turn(pit)
             else:
                 # minimax
-                # state = game.getState()
-                # action = minmax_decision(state, game, 7) 
-                # game.play_turn(action)
-
-                # alpha beta
                 state = game.getState()
-                action = alpha_beta_search(state, game, 10)
+                action = minmax_decision(state, game, 5) 
                 game.play_turn(action)
+
+            #     # alpha beta
+            #     state = game.getState()
+            #     action = alpha_beta_search(state, game, 10)
+            #     game.play_turn(action)
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
             player1 += 1
         elif game.board[game.p2_mancala_index] > game.board[game.p1_mancala_index]:
             player2 += 1
-    #print(f"Average number of turns taken: {math.ceil(np.mean(turns_taken))}") # print statement for random versus random
+        turns_taken.append(game.turn_number)
+    print(f"Average number of turns taken: {math.ceil(np.mean(turns_taken))}") # print statement for random versus random
     print(f"Player 1 Wins: {player1}")
     print(f"Player 2 Wins: {player2}")
 
@@ -435,6 +439,7 @@ class MancalaUI:
 
 if __name__ == "__main__":
     main()
-    game = Mancala()
-    app = MancalaUI(game)
-    app.run()
+    # uncomment for UI
+    # game = Mancala()
+    # app = MancalaUI(game)
+    # app.run()
