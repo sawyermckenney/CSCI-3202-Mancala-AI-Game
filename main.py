@@ -317,7 +317,7 @@ class AIPlayer(Mancala):
         
         if player == 1:
             maxMancala = self.p1_mancala_index
-            minMancala = self.p2_mancala_index
+            minMancala = self.p2_mancala_index #Utility function given to us to use
         else: 
             maxMancala = self.p2_mancala_index
             minMancala = self.p1_mancala_index
@@ -325,7 +325,7 @@ class AIPlayer(Mancala):
         return board[maxMancala] - board[minMancala] #Utility function 
     
     def getState(self): #helper function
-        return {'board': self.board[:], 'currentPlayer': self.current_player}
+        return {'board': self.board[:], 'currentPlayer': self.current_player} #Used a dictionary syntax to make more legible 
     
     def result(self, state, move): #What this does is it takes a state and from there it makes a move and returns the result of the move
         """Return the state that results from making a move from a state.""" 
@@ -336,6 +336,7 @@ class AIPlayer(Mancala):
         return {'board': game.board, 'currentPlayer': game.current_player}
     
     def terminal_test_helper(self, state, start_pit, end_pit):
+        """Returns True as long as the terminal state has not been reached.""" 
         board = state['board']
         for pit in range(start_pit, end_pit + 1):
             if board[pit] == 0:
