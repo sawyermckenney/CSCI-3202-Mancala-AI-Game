@@ -1,11 +1,11 @@
 import random
 import numpy as np
 import math
-
 from tkinter import *
-import tkinter as tk
 
-# random.seed(109) # use to get reproducible results 
+import tkinter as tk
+from tkinter import messagebox
+#random.seed(109) # use to get reproducible results 
 
 
 class Mancala:
@@ -288,7 +288,7 @@ def alpha_beta_search(state, game, depthLimit):
 
 class AIPlayer(Mancala):
     def __init__(self, pits_per_player=6, stones_per_pit=4):
-        super().__init__(pits_per_player, stones_per_pit)
+        super().__init__(pits_per_player, stones_per_pit) #Used to avoid duplication of Mancala Class 
 
     def actions(self, state):
         """Return a list of the allowable moves at this point."""
@@ -360,7 +360,7 @@ def main():
     player2 = 0
     turns_taken = []
 
-    for i in range(10000):
+    for i in range(1):
         # game = Mancala(pits_per_player=6, stones_per_pit = 4)
         game = AIPlayer(pits_per_player=6, stones_per_pit = 4)
         # game.display_board()
@@ -374,14 +374,15 @@ def main():
                 game.play_turn(pit)
             else:
                 # minimax
-                state = game.getState()
-                action = minmax_decision(state, game, 5) 
-                game.play_turn(action)
+                # state = game.getState()
+                # action = minmax_decision(state, game, 5) 
+                # game.play_turn(action)
 
-            #     # alpha beta
-            #     state = game.getState()
-            #     action = alpha_beta_search(state, game, 10)
-            #     game.play_turn(action)
+            #  alpha beta
+               state = game.getState()
+               action = alpha_beta_search(state, game, 5)
+               game.play_turn(action)
+
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
             player1 += 1
         elif game.board[game.p2_mancala_index] > game.board[game.p1_mancala_index]:
@@ -392,55 +393,136 @@ def main():
     print(f"Player 2 Wins: {player2}")
 
 class MancalaUI:
-    def __init__(self, mancala):
-        self.game = Mancala()
+    def __init__(self, Mancala):
+        self.game = Mancala
         self.root = tk.Tk()
-        self.root.title("Mancala")
+        self.root.title("Mancala Game")
         self.menu()
-    
     def menu(self):
-        button0 = Button(self.root, text="AI vs Random", command=self.random_vs_ai)
-        button1 = Button(self.root, text="Player vs AI", command=self.player_vs_ai)
-        button2 = Button(self.root, text="Player vs Random", command=self.player_vs_random)
+        buttonFrame = tk.Frame(self.root)
+        buttonFrame.pack(pady=100)
+        title = tk.Label(self.root, text="Make a Selection!", font = ("Arial", 24, "bold"))
+        title.pack(pady=20)
+        button0 = Button(self.root, text="Player vs Player", command=self.player_vs_player, width = 20, height = 2)
+        button1 = Button(self.root, text="Player vs AI", command=self.player_vs_ai, width = 20, height = 2)
+        button2 = Button(self.root, text="Player vs Random Player", command=self.player_vs_random, width = 20, height = 2)
         button0.pack()
         button1.pack()
         button2.pack()
 
-    def setup_board(self):
+    def setup_board(self, func):
         for widget in self.root.winfo_children(): #Clears the initial buttons
             widget.destroy()
-        
-        self.player = tk.Label(self.root, text=f"Player {self.game.current_player}'s Turn").pack(pady=10)
-        board_frame = tk.Frame(self.root) #Creates a container for grouping the peaces
+        self.player = tk.Label(self.root, text=f"Player {self.game.current_player}'s Turn") #Keeps track of current player
+        self.player.pack(pady=10)
+        self.moveLabel = tk.Label(self.root, text="Last Move: None") #Used for AI and Random Player
+        self.moveLabel.pack(pady=5)
+        board_frame = tk.Frame(self.root) 
         board_frame.pack(pady=20) #Y-axis positioning
-        tk.Label(board_frame, text=f"P2-{self.game.board[self.game.p2_mancala_index]}", width=5, height=6, bg="white", fg="black").grid(row=0, column=0, rowspan=2, padx=10, pady=10)
-        for i in range(1, self.game.pits_per_player+1):
-            index = self.game.pitIndex(i)
+        self.p2_mancala_label = tk.Label(board_frame, text=f"P2-{self.game.board[self.game.p2_mancala_index]}", width=5, height=6, bg="white", fg="black") #P2 Mancala
+        self.p2_mancala_label.grid(row=0, column=0, rowspan=2, padx=10, pady=10)
+        self.p2Buttons = [] #Stores buttons n an array so they can be updated by update_board
+        for i in range(self.game.pits_per_player):
+            index = self.game.p2_pits_index[0] + i
             stones = self.game.board[index]
-            tk.Button(board_frame, text=f"P2-{stones}", width=5, height=2).grid(row=0, column=i)
-        for i in range(1, self.game.pits_per_player+1):
-            index = self.game.pitIndex(i)
+            btn = tk.Button(board_frame, text=f"P2-{stones}", width=5, height=2, command=lambda pit=(self.game.pits_per_player - i): func(pit), state=tk.NORMAL if self.game.current_player == 2 else tk.DISABLED)
+            btn.grid(row=0, column=i+1)
+            self.p2Buttons.append(btn) #Creates the buttons 
+        self.p1Buttons = []
+        for i in range(self.game.pits_per_player):
+            index = self.game.p1_pits_index[0] + i
             stones = self.game.board[index]
-            tk.Button(board_frame, text=f"P1-{stones}", width=5, height=2).grid(row=1, column=i)
-        tk.Label(board_frame, text=f"P1-{self.game.board[self.game.p1_mancala_index]}", width=5, height=6, bg="white", fg="black").grid(row=0, column=self.game.pits_per_player+1, rowspan=2, padx=10, pady=10)
-        quit = tk.Button(self.root, text="Quit", command=self.root.quit).pack(pady=1)
-    def player_vs_random(self):
-        self.setup_board()
+            btn=tk.Button(board_frame, text=f"P1-{stones}", width=5, height=2, command=lambda pit = i+1: func(pit), state=tk.NORMAL if self.game.current_player == 1 else tk.DISABLED)
+            btn.grid(row=1, column=i+1)
+            self.p1Buttons.append(btn)
+        self.p1_mancala_label = tk.Label(board_frame, text=f"P1-{self.game.board[self.game.p1_mancala_index]}", width=5, height=6, bg="white", fg="black") #P2 Mancala
+        self.p1_mancala_label.grid(row=0, column=self.game.pits_per_player+1, rowspan=2, padx=10, pady=10)
+        quit = tk.Button(self.root, text="Quit", command=self.root.quit)
+        quit.pack(pady=1)
+
+    def play_turn(self, pit):
+        if self.game.valid_move(pit):
+            self.game.play_turn(pit)
+            if self.game.winning_eval(): #Logic check
+                if self.game.board[self.game.p1_mancala_index] > self.game.board[self.game.p2_mancala_index]:
+                    winner = "Player 1"
+                elif self.game.board[self.game.p2_mancala_index] > self.game.board[self.game.p1_mancala_index]:
+                    winner = "Player 2"
+                tk.messagebox.showinfo("Game Over", f"Game Over! {winner} wins!")
+                self.root.quit()
+            else:
+                self.moveLabel.pack_forget() #Hides label because we do not need it is not needed
+                self.update_board()
+        else:
+            tk.messagebox.showerror("Invalid Move", "Please select a valid pit.")
+
+    def update_board(self):
+        p1Start = self.game.p1_pits_index[0] 
+        for i, btn in enumerate(self.p1Buttons): #Returns both index and btn so we can update both dynamical
+            stones = self.game.board[p1Start + i] #Updates player 1's buttons
+            btn.config(text=f"P1-{stones}")
+            btn.config(state=tk.NORMAL if self.game.current_player == 1 else tk.DISABLED) #Disables buttons hen it is not player turn
+        p2End = self.game.p2_pits_index[1]
+        for i, btn in enumerate(self.p2Buttons): #Same thing done here as above but with player 2 index logic
+            stones = self.game.board[p2End - i]
+            btn.config(text=f"P2-{stones}") 
+            btn.config(state=tk.NORMAL if self.game.current_player == 2 else tk.DISABLED)
+        self.p1_mancala_label.config(text=f"P1-{self.game.board[self.game.p1_mancala_index]}") #Updates mancala index
+        self.p2_mancala_label.config(text=f"P2-{self.game.board[self.game.p2_mancala_index]}")
+        self.player.config(text=f"Player {self.game.current_player}'s Turn") #Updates turn
+        self.game.display_board()
+
+    def play_turn_random(self, pit):
+        if self.game.valid_move(pit):
+            self.game.play_turn(pit) #Logic check
+            if self.game.winning_eval():
+                if self.game.board[self.game.p1_mancala_index] > self.game.board[self.game.p2_mancala_index]:
+                    winner = "Player 1"
+                elif self.game.board[self.game.p2_mancala_index] > self.game.board[self.game.p1_mancala_index]:
+                    winner = "Player 2"
+                tk.messagebox.showinfo("Game Over", f"Game Over! {winner} wins!")
+                self.root.quit()
+            else:
+                if self.game.current_player == 2:
+                    pit = self.game.random_move_generator() #Random move logic
+                    self.moveLabel.config(text=f"Last Move Player {self.game.current_player} moved pit {self.game.pits_per_player - pit+1}") #Helps keep track
+                    self.game.play_turn(pit)
+                    self.update_board()
+        else:
+            tk.messagebox.showerror("Invalid Move", "Please select a valid pit.")
  
-    def random_vs_ai(self):
-        self.setup_board()
+    def play_turn_ai(self, pit):
+        if self.game.valid_move(pit):
+            self.game.play_turn(pit)
+            if self.game.winning_eval(): #Logic check
+                if self.game.board[self.game.p1_mancala_index] > self.game.board[self.game.p2_mancala_index]:
+                    winner = "Player 1"
+                elif self.game.board[self.game.p2_mancala_index] > self.game.board[self.game.p1_mancala_index]:
+                    winner = "Player 2"
+                tk.messagebox.showinfo("Game Over", f"Game Over! {winner} wins!")
+                self.root.quit()
+            else:
+                if self.game.current_player == 2:
+                    state = game.getState()
+                    action = alpha_beta_search(state, game, 10) #AI logic
+                    self.moveLabel.config(text=f"Last Move Player {self.game.current_player} moved pit {self.game.pits_per_player - action+1}")
+                    game.play_turn(action)
+                    self.update_board()
+        else:
+            tk.messagebox.showerror("Invalid Move", "Please select a valid pit.")
 
-    def player_vs_ai(self):
-        self.setup_board()
-
+    def player_vs_random(self): # Working
+        self.setup_board(self.play_turn_random)
+    def player_vs_ai(self): # Working
+        self.setup_board(self.play_turn_ai)
+    def player_vs_player(self): # Working
+        self.setup_board(self.play_turn)
     def run(self):
         self.root.mainloop()
 
-        
-
 if __name__ == "__main__":
-    main()
+    #main()
     # uncomment for UI
-    # game = Mancala()
-    # app = MancalaUI(game)
-    # app.run()
+    game = AIPlayer(pits_per_player=6, stones_per_pit = 5)
+    app = MancalaUI(game)
+    app.run()
