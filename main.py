@@ -245,41 +245,44 @@ def minmax_decision(state, game, depthLimit): #Note: Added a depth limit to limi
     # Body of minmax_decision:
     return max(game.actions(state), key=lambda a: min_value(game.result(state, a), depthLimit))
 
-def alpha_beta_search(state, game, depthLimit):
+def alpha_beta_cutoff_search(state, game, d=4, cutoff_test=None, eval_fn=None):
     """Search game to determine best action; use alpha-beta pruning.
-    As in [Figure 5.7], this version searches all the way to the leaves."""
-    
+    This version cuts off search and uses an evaluation function."""
+
     player = game.to_move(state)
 
     # Functions used by alpha_beta
     def max_value(state, alpha, beta, depth):
-        if game.terminal_test(state) or depth == 0:
-            return game.utility(state, player)
+        if cutoff_test(state, depth):
+            return eval_fn(state)
         v = -np.inf
         for a in game.actions(state):
-            v = max(v, min_value(game.result(state, a), alpha, beta, depth - 1))
+            v = max(v, min_value(game.result(state, a), alpha, beta, depth + 1))
             if v >= beta:
                 return v
             alpha = max(alpha, v)
         return v
 
     def min_value(state, alpha, beta, depth):
-        if game.terminal_test(state) or depth == 0:
-            return game.utility(state, player)
+        if cutoff_test(state, depth):
+            return eval_fn(state)
         v = np.inf
         for a in game.actions(state):
-            v = min(v, max_value(game.result(state, a), alpha, beta, depth - 1))
+            v = min(v, max_value(game.result(state, a), alpha, beta, depth + 1))
             if v <= alpha:
                 return v
             beta = min(beta, v)
         return v
 
-    # Body of alpha_beta_search:
+    # Body of alpha_beta_cutoff_search starts here:
+    # The default test cuts off at depth d or at a terminal state
+    cutoff_test = (cutoff_test or (lambda state, depth: depth > d or game.terminal_test(state)))
+    eval_fn = eval_fn or (lambda state: game.utility(state, player))
     best_score = -np.inf
     beta = np.inf
     best_action = None
     for a in game.actions(state):
-        v = min_value(game.result(state, a), best_score, beta, depthLimit - 1)
+        v = min_value(game.result(state, a), best_score, beta, 1)
         if v > best_score:
             best_score = v
             best_action = a
@@ -380,7 +383,7 @@ def main():
 
             #  alpha beta
                state = game.getState()
-               action = alpha_beta_search(state, game, 5)
+               action = alpha_beta_cutoff_search(state, game, 5, None, None)
                game.play_turn(action)
 
         if game.board[game.p1_mancala_index] > game.board[game.p2_mancala_index]:
@@ -504,7 +507,7 @@ class MancalaUI:
             else:
                 if self.game.current_player == 2:
                     state = game.getState()
-                    action = alpha_beta_search(state, game, 10) #AI logic
+                    action = alpha_beta_cutoff_search(state, game, 10, None, None) #AI logic
                     self.moveLabel.config(text=f"Last Move Player {self.game.current_player} moved pit {self.game.pits_per_player - action+1}")
                     game.play_turn(action)
                     self.update_board()
