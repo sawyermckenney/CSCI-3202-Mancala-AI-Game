@@ -2,7 +2,6 @@ import random
 import numpy as np
 import math
 from tkinter import *
-
 import tkinter as tk
 from tkinter import messagebox
 #random.seed(109) # use to get reproducible results 
